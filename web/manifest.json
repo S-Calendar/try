@@ -1,6 +1,6 @@
 {
-    "name": "scalendar_app",
-    "short_name": "scalendar_app",
+    "name": "AI",
+    "short_name": "AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

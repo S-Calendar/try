@@ -1,4 +1,4 @@
-# scalendar_app
+# AI
 
 A new Flutter project.
 
