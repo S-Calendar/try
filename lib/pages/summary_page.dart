@@ -1,7 +1,7 @@
-// lib/summary_page.dart
+// pages/summary_page.dart
 import 'package:flutter/material.dart';
-import 'package:AI/services/gemini_service.dart';
-import 'package:AI/services/web_scraper_service.dart';
+import 'package:scalendar_app/services/gemini_service.dart';
+import 'package:scalendar_app/services/web_scraper_service.dart';
 
 class SummaryPage extends StatefulWidget {
   const SummaryPage({super.key});

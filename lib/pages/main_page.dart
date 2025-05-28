@@ -1,6 +1,9 @@
 // pages/main_page.dart
 import 'package:flutter/material.dart';
 import '../widgets/custom_calendar.dart';
+import '../models/notice.dart'; // 공지 모델
+import '../services/notice_data.dart'; // 공지 데이터 (임의로 위치 설정)
+import '../widgets/notice_modal.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -14,6 +17,7 @@ class _MainPageState extends State<MainPage> {
   late final PageController _pageController;
   late int _selectedIndex;
   late int _todayIndex;
+  late List<Notice> allNotices = [];
 
   @override
   void initState() {
@@ -22,6 +26,12 @@ class _MainPageState extends State<MainPage> {
     _todayIndex = (today.year - baseYear) * 12 + (today.month - 1);
     _selectedIndex = _todayIndex;
     _pageController = PageController(initialPage: _todayIndex);
+
+    NoticeData.loadNoticesFromJson(context).then((notices) {
+      setState(() {
+        allNotices = notices;
+      });
+    });
   }
 
   @override
@@ -33,9 +43,8 @@ class _MainPageState extends State<MainPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // 상단 고정 UI
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.fromLTRB(16, 25, 16, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -43,6 +52,7 @@ class _MainPageState extends State<MainPage> {
                     onTap: () => Navigator.pushNamed(context, '/settings'),
                     child: Image.asset('assets/setting_icon.png', width: 32),
                   ),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -52,17 +62,20 @@ class _MainPageState extends State<MainPage> {
                     },
                     child: Image.asset('assets/today_icon.png', width: 70),
                   ),
+                  const SizedBox(width: 4),
                   Text(
                     '$month월',
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () => Navigator.pushNamed(context, '/search'),
-                    child: Image.asset('assets/search_icon.png', width: 32),
+                    child: Image.asset('assets/search_icon.png', width: 30),
                   ),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: () => Navigator.pushNamed(context, '/filter'),
                     child: Image.asset(
@@ -73,8 +86,6 @@ class _MainPageState extends State<MainPage> {
                 ],
               ),
             ),
-
-            // 달력 영역
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -87,7 +98,10 @@ class _MainPageState extends State<MainPage> {
                   final int year = baseYear + (index ~/ 12);
                   final int month = (index % 12) + 1;
                   final DateTime currentMonth = DateTime(year, month);
-                  return CustomCalendar(month: currentMonth);
+                  return CustomCalendar(
+                    month: currentMonth,
+                    notices: allNotices,
+                  );
                 },
               ),
             ),
