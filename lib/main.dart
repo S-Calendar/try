@@ -4,6 +4,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/splash_page.dart';
 import 'pages/start_page.dart';
 import 'pages/main_page.dart';
+import 'pages/search_page.dart'; // 올바른 경로와 이름으로 수정
+
+
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +27,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const StartPage(),
         '/main_page': (context) => const MainPage(),
+        '/search': (context) => const SearchPage(), // ✅ 검색 페이지 라우트 추가
       },
     );
   }
