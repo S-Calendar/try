@@ -22,8 +22,13 @@ class NoticeBottomSheet extends StatelessWidget {
       initialChildSize: 0.8,
       minChildSize: 0.3,
       maxChildSize: 1.0,
-      builder:
-          (_, controller) => Padding(
+      builder: (_, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Column(
               children: [
@@ -87,6 +92,8 @@ class NoticeBottomSheet extends StatelessWidget {
               ],
             ),
           ),
+        );
+      },
     );
   }
 }
