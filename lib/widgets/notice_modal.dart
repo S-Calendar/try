@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/notice.dart';
+import '../pages/summary_page.dart';
 
 class NoticeBottomSheet extends StatelessWidget {
   final DateTime date;
@@ -55,35 +56,52 @@ class NoticeBottomSheet extends StatelessWidget {
                     itemCount: notices.length,
                     itemBuilder: (_, index) {
                       final n = notices[index];
-                      return Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: n.color,
-                                borderRadius: BorderRadius.circular(3),
+                      return GestureDetector(
+                        onTap: () {
+                          if (n.url != null && n.url!.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => SummaryPage(
+                                      initialUrl: n.url!,
+                                      noticeTitle: n.title,
+                                      noticeColor: n.color,
+                                    ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                n.title,
-                                style: const TextStyle(fontSize: 14),
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: n.color,
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  n.title,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
