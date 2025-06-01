@@ -1,8 +1,8 @@
 // pages/main_page.dart
 import 'package:flutter/material.dart';
 import '../widgets/custom_calendar.dart';
-import '../models/notice.dart'; // 공지 모델
-import '../services/notice_data.dart'; // 공지 데이터 (임의로 위치 설정)
+import '../models/notice.dart';
+import '../services/notice_data.dart';
 import '../widgets/notice_modal.dart';
 
 class MainPage extends StatefulWidget {
@@ -27,11 +27,20 @@ class _MainPageState extends State<MainPage> {
     _selectedIndex = _todayIndex;
     _pageController = PageController(initialPage: _todayIndex);
 
-    NoticeData.loadNoticesFromJson(context).then((notices) {
-      setState(() {
-        allNotices = notices;
-      });
+    _loadNotices();
+  }
+
+  Future<void> _loadNotices() async {
+    final notices = await NoticeData.loadNoticesFromJson(context);
+    setState(() {
+      allNotices = notices.where((n) => !n.isHidden).toList(); // 숨김 공지 제외
     });
+  }
+
+  // 관심 목록 페이지 등에서 돌아올 때 새로 고침 용
+  Future<void> _navigateAndRefresh(String routeName) async {
+    await Navigator.pushNamed(context, routeName);
+    await _loadNotices();
   }
 
   @override
@@ -49,7 +58,7 @@ class _MainPageState extends State<MainPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/settings'),
+                    onTap: () => _navigateAndRefresh('/settings'),
                     child: Image.asset('assets/setting_icon.png', width: 32),
                   ),
                   const SizedBox(width: 4),
@@ -72,12 +81,12 @@ class _MainPageState extends State<MainPage> {
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/search'),
+                    onTap: () => _navigateAndRefresh('/search'),
                     child: Image.asset('assets/search_icon.png', width: 30),
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/filter'),
+                    onTap: () => _navigateAndRefresh('/filter'),
                     child: Image.asset(
                       'assets/colorfilter_icon.png',
                       width: 44,
@@ -95,9 +104,10 @@ class _MainPageState extends State<MainPage> {
                   });
                 },
                 itemBuilder: (context, index) {
-                  final int year = baseYear + (index ~/ 12);
-                  final int month = (index % 12) + 1;
-                  final DateTime currentMonth = DateTime(year, month);
+                  final year = baseYear + (index ~/ 12);
+                  final month = (index % 12) + 1;
+                  final currentMonth = DateTime(year, month);
+
                   return CustomCalendar(
                     month: currentMonth,
                     notices: allNotices,
