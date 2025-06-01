@@ -1,71 +1,57 @@
 // pages/summary_page.dart
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:scalendar_app/services/gemini_service.dart';
 import 'package:scalendar_app/services/web_scraper_service.dart';
 
 class SummaryPage extends StatefulWidget {
-  const SummaryPage({super.key});
+  final String initialUrl;
+  final String noticeTitle;
+  final Color noticeColor;
+
+  const SummaryPage({
+    super.key,
+    required this.initialUrl,
+    required this.noticeTitle,
+    required this.noticeColor,
+  });
 
   @override
   State<SummaryPage> createState() => _SummaryPageState();
 }
 
 class _SummaryPageState extends State<SummaryPage> {
-  final TextEditingController _urlController = TextEditingController();
   final WebScraperService _webScraperService = WebScraperService();
   final GeminiService _geminiService = GeminiService();
 
-  bool _isLoading = false;
+  bool _isLoading = true;
   Map<String, String>? _summaryResults;
   String? _errorMessage;
+  String? _memo;
 
   @override
-  void dispose() {
-    _urlController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _summarizeFromInitialUrl();
   }
 
-  Future<void> _summarizeUrl() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _summaryResults = null;
-    });
-
-    final url = _urlController.text.trim();
-    if (url.isEmpty) {
-      setState(() {
-        _errorMessage = "URL을 입력해주세요.";
-        _isLoading = false;
-      });
-      return;
-    }
-
+  Future<void> _summarizeFromInitialUrl() async {
     try {
-      // 1. 웹 페이지 내용 가져오기
-      final content = await _webScraperService.fetchAndExtractText(url);
-
+      final content = await _webScraperService.fetchAndExtractText(
+        widget.initialUrl,
+      );
       if (content == null || content.isEmpty) {
         setState(() {
-          _errorMessage = "웹 페이지 내용을 가져오거나 파싱하는 데 실패했습니다. URL을 확인해 주세요.";
+          _errorMessage = "웹 페이지 내용을 가져오거나 파싱하는 데 실패했습니다.";
           _isLoading = false;
         });
         return;
       }
 
-      // 개발자용: 가져온 내용이 너무 길 경우 자르기 (API 토큰 제한 고려)
-      // Gemini 1.5 Flash는 1백만 토큰까지 가능하지만, 테스트 목적으로 자를 수 있음.
-      // if (content.length > 50000) {
-      //   content = content.substring(0, 50000);
-      //   print("Warning: Content truncated to 50,000 characters for summarization.");
-      // }
-
-      // 2. Gemini API로 요약 요청
       final summary = await _geminiService.summarizeUrlContent(content);
-
       if (summary == null) {
         setState(() {
-          _errorMessage = "요약 내용을 생성하는 데 실패했습니다. 다시 시도해 주세요.";
+          _errorMessage = "요약 내용을 생성하는 데 실패했습니다.";
           _isLoading = false;
         });
         return;
@@ -73,89 +59,160 @@ class _SummaryPageState extends State<SummaryPage> {
 
       setState(() {
         _summaryResults = summary;
+        _isLoading = false;
       });
     } catch (e) {
       setState(() {
-        _errorMessage = "오류가 발생했습니다: $e";
-      });
-    } finally {
-      setState(() {
+        _errorMessage = "오류 발생: $e";
         _isLoading = false;
       });
     }
   }
 
-  void _clearResults() {
-    setState(() {
-      _urlController.clear();
-      _summaryResults = null;
-      _errorMessage = null;
-      _isLoading = false;
-    });
+  Future<void> _launchUrl() async {
+    final url = Uri.parse(widget.initialUrl);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("링크를 열 수 없습니다.")));
+    }
+  }
+
+  void _showMemoDialog() {
+    final TextEditingController controller = TextEditingController(text: _memo);
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('메모 수정'),
+            content: TextField(
+              controller: controller,
+              maxLines: 3,
+              decoration: const InputDecoration(hintText: '메모를 입력하세요'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('취소'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() => _memo = controller.text);
+                  Navigator.pop(context);
+                },
+                child: const Text('저장'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _hideNotice() {
+    // 향후 설정 페이지에서 관리할 수 있도록 처리 예정
+    Navigator.pop(context); // 요약 페이지 닫기 (숨김 효과)
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('URL 내용 요약')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _urlController,
-              decoration: InputDecoration(
-                labelText: 'URL 입력',
-                hintText: 'https://www.example.com',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.url,
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _summarizeUrl,
-                    child:
-                        _isLoading
-                            ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
-                            : const Text('요약하기'),
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                ElevatedButton(
-                  onPressed: _clearResults,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                  child: const Text('지우기'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24.0),
-            if (_errorMessage != null)
-              Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-            if (_summaryResults != null)
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildSummaryItem('참가대상', _summaryResults!['참가대상']),
-                      _buildSummaryItem('신청방법', _summaryResults!['신청방법']),
-                      _buildSummaryItem('내용', _summaryResults!['내용']),
-                      _buildSummaryItem('신청기간', _summaryResults!['신청기간']),
-                    ],
-                  ),
-                ),
-              ),
-            if (_isLoading && _summaryResults == null && _errorMessage == null)
-              const Center(child: Text('요약 중입니다... 잠시 기다려 주세요.')),
-          ],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
+        title: const Text('공지 요약'),
       ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+              ? Center(child: Text(_errorMessage!))
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: widget.noticeColor,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.noticeTitle,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSummaryItem('참가대상', _summaryResults!["참가대상"]),
+                    _buildSummaryItem('신청기간', _summaryResults!["신청기간"]),
+                    _buildSummaryItem('신청방법', _summaryResults!["신청방법"]),
+                    _buildSummaryItem('내용', _summaryResults!["내용"]),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: _launchUrl,
+                      child: const Text(
+                        '홈페이지 바로가기',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 14,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '메모:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (_memo != null && _memo!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(_memo!),
+                      ),
+                    const SizedBox(height: 60),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _showMemoDialog,
+                          child: const Text('수정'),
+                        ),
+                        const SizedBox(width: 40),
+                        ElevatedButton(
+                          onPressed: _hideNotice,
+                          child: const Text('숨기기'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
     );
   }
 
