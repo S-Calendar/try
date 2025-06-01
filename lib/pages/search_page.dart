@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/notice.dart';
+import '../utils/notice_data.dart';
+import 'summary_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -9,105 +12,76 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, String>> _searchResults = [];
+  List<Notice> _allNotices = [];
+  List<Notice> _filteredNotices = [];
 
-  final List<Map<String, String>> _allData = [
-    {'date': '2024.05.10', 'content': 'AI융합학부 IT경진대회'},
-    {'date': '2025.05.12', 'content': 'AI융합학부 IT경진대회'},
-    // 다른 공지사항도 여기에 추가 가능
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadNotices();
+  }
 
-  void _performSearch(String query) {
+  Future<void> _loadNotices() async {
+    final notices = await NoticeData.loadNoticesFromAssets();
     setState(() {
-      _searchResults = _allData
-          .where((item) => item['content']!.contains(query))
+      _allNotices = notices;
+      _filteredNotices = notices;
+    });
+  }
+
+  void _filterNotices(String keyword) {
+    setState(() {
+      _filteredNotices = _allNotices
+          .where((notice) => notice.title.contains(keyword))
           .toList();
     });
+  }
+
+  void _navigateToSummary(String url) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SummaryPage(url: url),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      appBar: AppBar(title: const Text("공지사항 검색")),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // 상단 검색창
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _searchController,
-                onSubmitted: _performSearch,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  hintText: '검색어를 입력하세요',
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () => _performSearch(_searchController.text),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: "검색어를 입력하세요",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: _filterNotices,
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filteredNotices.length,
+                itemBuilder: (context, index) {
+                  final notice = _filteredNotices[index];
+                  return ListTile(
+                    title: Text(notice.title),
+                    subtitle: Text(notice.author ?? ''),
+                    onTap: notice.url != null
+                        ? () => _navigateToSummary(notice.url!)
+                        : null,
+                  );
+                },
               ),
             ),
-            // 검색 결과
-            if (_searchResults.isNotEmpty)
-              Expanded(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            '일자',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            '내용',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: ListView.separated(
-                        itemCount: _searchResults.length,
-                        separatorBuilder: (context, index) =>
-                            const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final item = _searchResults[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(item['date']!),
-                                Text(
-                                  item['content']!,
-                                  style: const TextStyle(
-                                    color: Colors.deepPurple,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 }
+
