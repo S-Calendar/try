@@ -1,20 +1,14 @@
 // pages/summary_page.dart
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:scalendar_app/models/notice.dart';
 import 'package:scalendar_app/services/gemini_service.dart';
 import 'package:scalendar_app/services/web_scraper_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SummaryPage extends StatefulWidget {
-  final String initialUrl;
-  final String noticeTitle;
-  final Color noticeColor;
-
-  const SummaryPage({
-    super.key,
-    required this.initialUrl,
-    required this.noticeTitle,
-    required this.noticeColor,
-  });
+  final Notice notice;
+  const SummaryPage({super.key, required this.notice});
 
   @override
   State<SummaryPage> createState() => _SummaryPageState();
@@ -27,19 +21,39 @@ class _SummaryPageState extends State<SummaryPage> {
   bool _isLoading = true;
   Map<String, String>? _summaryResults;
   String? _errorMessage;
-  String? _memo;
 
   @override
   void initState() {
     super.initState();
+    _loadMemo();
     _summarizeFromInitialUrl();
+  }
+
+  Future<void> _loadMemo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _generateMemoKey();
+    final savedMemo = prefs.getString(key);
+    setState(() {
+      widget.notice.memo = savedMemo;
+    });
+  }
+
+  Future<void> _saveMemo(String memo) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _generateMemoKey();
+    await prefs.setString(key, memo);
+    setState(() {
+      widget.notice.memo = memo;
+    });
+  }
+
+  String _generateMemoKey() {
+    return 'memo_${widget.notice.title}_${widget.notice.startDate.toIso8601String()}';
   }
 
   Future<void> _summarizeFromInitialUrl() async {
     try {
-      final content = await _webScraperService.fetchAndExtractText(
-        widget.initialUrl,
-      );
+      final content = await _webScraperService.fetchAndExtractText(widget.notice.url ?? '');
       if (content == null || content.isEmpty) {
         setState(() {
           _errorMessage = "웹 페이지 내용을 가져오거나 파싱하는 데 실패했습니다.";
@@ -70,149 +84,152 @@ class _SummaryPageState extends State<SummaryPage> {
   }
 
   Future<void> _launchUrl() async {
-    final url = Uri.parse(widget.initialUrl);
+    final rawUrl = widget.notice.url;
+    if (rawUrl == null) return;
+    final url = Uri.parse(rawUrl);
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("링크를 열 수 없습니다.")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("링크를 열 수 없습니다.")),
+      );
     }
   }
 
   void _showMemoDialog() {
-    final TextEditingController controller = TextEditingController(text: _memo);
+    final TextEditingController controller = TextEditingController(text: widget.notice.memo);
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('메모 수정'),
-            content: TextField(
-              controller: controller,
-              maxLines: 3,
-              decoration: const InputDecoration(hintText: '메모를 입력하세요'),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _memo = controller.text);
-                  Navigator.pop(context);
-                },
-                child: const Text('저장'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('메모 수정'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: '메모를 입력하세요'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
           ),
+          TextButton(
+            onPressed: () async {
+              final memo = controller.text.trim();
+              await _saveMemo(memo);
+              Navigator.pop(context);
+            },
+            child: const Text('저장'),
+          ),
+        ],
+      ),
     );
   }
 
   void _hideNotice() {
-    // 향후 설정 페이지에서 관리할 수 있도록 처리 예정
-    Navigator.pop(context); // 요약 페이지 닫기 (숨김 효과)
+    setState(() {
+      widget.notice.isHidden = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이 공지를 숨겼습니다.')),
+    );
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: const Text('공지 요약'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('공지 요약'),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage != null
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
               ? Center(child: Text(_errorMessage!))
               : SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: widget.noticeColor,
-                              borderRadius: BorderRadius.circular(3),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildNoticeHeader(),
+                      const SizedBox(height: 24),
+                      _buildSummaryItem('참가대상', _summaryResults!["참가대상"]),
+                      _buildSummaryItem('신청기간', _summaryResults!["신청기간"]),
+                      _buildSummaryItem('신청방법', _summaryResults!["신청방법"]),
+                      _buildSummaryItem('내용', _summaryResults!["내용"]),
+                      const SizedBox(height: 16),
+                      if (widget.notice.url != null)
+                        GestureDetector(
+                          onTap: _launchUrl,
+                          child: const Text(
+                            '홈페이지 바로가기',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.noticeTitle,
-                              style: const TextStyle(fontSize: 14),
-                            ),
+                        ),
+                      const SizedBox(height: 12),
+                      const Divider(color: Colors.grey),
+                      const SizedBox(height: 12),
+                      const Text('메모:',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      if (widget.notice.memo != null && widget.notice.memo!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0),
+                          child: Text(widget.notice.memo!),
+                        ),
+                      const SizedBox(height: 60),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _showMemoDialog,
+                            child: const Text('수정'),
+                          ),
+                          const SizedBox(width: 40),
+                          ElevatedButton(
+                            onPressed: _hideNotice,
+                            child: const Text('숨기기'),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSummaryItem('참가대상', _summaryResults!["참가대상"]),
-                    _buildSummaryItem('신청기간', _summaryResults!["신청기간"]),
-                    _buildSummaryItem('신청방법', _summaryResults!["신청방법"]),
-                    _buildSummaryItem('내용', _summaryResults!["내용"]),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: _launchUrl,
-                      child: const Text(
-                        '홈페이지 바로가기',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 14,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Divider(color: Colors.grey),
-                    const SizedBox(height: 12),
-                    const Text(
-                      '메모:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    if (_memo != null && _memo!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(_memo!),
-                      ),
-                    const SizedBox(height: 60),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _showMemoDialog,
-                          child: const Text('수정'),
-                        ),
-                        const SizedBox(width: 40),
-                        ElevatedButton(
-                          onPressed: _hideNotice,
-                          child: const Text('숨기기'),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+    );
+  }
+
+  Widget _buildNoticeHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 24,
+            decoration: BoxDecoration(
+              color: widget.notice.color,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              widget.notice.title,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -222,10 +239,8 @@ class _SummaryPageState extends State<SummaryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$title:',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
-          ),
+          Text('$title:',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0)),
           const SizedBox(height: 4.0),
           Text(content ?? '정보 없음', style: const TextStyle(fontSize: 14.0)),
         ],
