@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/notice.dart';
-import '../utils/notice_data.dart';
+import '../services/notice_data.dart';
 import 'summary_page.dart';
 
 class SearchPage extends StatefulWidget {
@@ -22,7 +22,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _loadNotices() async {
-    final notices = await NoticeData.loadNoticesFromAssets();
+    final notices = await NoticeData.loadNoticesFromFirestore();
     setState(() {
       _allNotices = notices;
       _filteredNotices = notices;
@@ -31,18 +31,17 @@ class _SearchPageState extends State<SearchPage> {
 
   void _filterNotices(String keyword) {
     setState(() {
-      _filteredNotices = _allNotices
-          .where((notice) => notice.title.contains(keyword))
-          .toList();
+      _filteredNotices =
+          _allNotices
+              .where((notice) => notice.title.contains(keyword))
+              .toList();
     });
   }
 
-  void _navigateToSummary(String url) {
+  void _navigateToSummary(Notice notice) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => SummaryPage(url: url),
-      ),
+      MaterialPageRoute(builder: (context) => SummaryPage(notice: notice)),
     );
   }
 
@@ -70,10 +69,11 @@ class _SearchPageState extends State<SearchPage> {
                   final notice = _filteredNotices[index];
                   return ListTile(
                     title: Text(notice.title),
-                    subtitle: Text(notice.author ?? ''),
-                    onTap: notice.url != null
-                        ? () => _navigateToSummary(notice.url!)
-                        : null,
+                    subtitle: Text(notice.writer ?? ''),
+                    onTap:
+                        notice.url != null
+                            ? () => _navigateToSummary(notice)
+                            : null,
                   );
                 },
               ),
@@ -84,4 +84,3 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 }
-

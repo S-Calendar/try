@@ -31,7 +31,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   Future<void> _loadNotices() async {
-    final notices = await NoticeData.loadNoticesFromJson(context);
+    final notices = await NoticeData.loadNoticesFromFirestore();
     setState(() {
       allNotices = notices.where((n) => !n.isHidden).toList(); // 숨김 공지 제외
     });

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'hidden_items_page.dart'; // ← 동일 폴더 내
-import 'favorite_notices_page.dart';
+import 'pages/hidden_items_page.dart'; // ← 동일 폴더 내
+import 'pages/favorite_notices_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
             context,
             MaterialPageRoute(builder: (_) => const HiddenItemsPage()),
           );
-        }
+        },
       },
       {
         'label': '관심 공지 편집',
@@ -39,15 +39,12 @@ class _SettingsPageState extends State<SettingsPage> {
             context,
             MaterialPageRoute(builder: (_) => const FavoriteNoticesPage()),
           );
-        }
+        },
       },
       {'label': '푸시 알림'},
       {'label': '내 계정'},
       {'label': '한/영 버전'},
-      {
-        'label': '브라이트/다크 모드',
-        'onTap': _toggleDarkMode,
-      },
+      {'label': '브라이트/다크 모드', 'onTap': _toggleDarkMode},
     ];
 
     return Scaffold(

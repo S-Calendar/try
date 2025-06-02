@@ -1,17 +1,25 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Firebase import 추가
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'pages/splash_page.dart';
 import 'pages/start_page.dart';
 import 'pages/main_page.dart';
 import 'pages/search_page.dart'; // 올바른 경로와 이름으로 수정
-
-
-
+import '/settings_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // dotenv 먼저 로드
   await dotenv.load(fileName: ".env");
+
+  // Firebase 초기화 추가
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MyApp());
 }
 
@@ -27,7 +35,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const StartPage(),
         '/main_page': (context) => const MainPage(),
-        '/search': (context) => const SearchPage(), // ✅ 검색 페이지 라우트 추가
+        '/search': (context) => const SearchPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }

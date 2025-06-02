@@ -62,16 +62,12 @@ class NoticeBottomSheet extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (_) => SummaryPage(
-                                      initialUrl: n.url!,
-                                      noticeTitle: n.title,
-                                      noticeColor: n.color,
-                                    ),
+                                builder: (_) => SummaryPage(notice: n),
                               ),
                             );
                           }
                         },
+
                         child: Container(
                           width: double.infinity,
                           margin: const EdgeInsets.symmetric(vertical: 6),

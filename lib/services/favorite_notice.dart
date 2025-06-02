@@ -1,23 +1,43 @@
-// favorite_notices_page.dart
+// favorite_notice.dart
 import 'package:flutter/material.dart';
-import 'services/notice_data.dart';
-import 'models/notice.dart';
+import '../models/notice.dart';
+import '../services/notice_data.dart';
 
-class FavoriteNoticesPage extends StatefulWidget {
-  const FavoriteNoticesPage({super.key});
+class FavoriteItemsPage extends StatefulWidget {
+  const FavoriteItemsPage({super.key});
 
   @override
-  State<FavoriteNoticesPage> createState() => _FavoriteNoticesPageState();
+  State<FavoriteItemsPage> createState() => _FavoriteItemsPageState();
 }
 
-class _FavoriteNoticesPageState extends State<FavoriteNoticesPage> {
+class _FavoriteItemsPageState extends State<FavoriteItemsPage> {
+  List<Notice> favoriteItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavoriteItems();
+  }
+
+  void _loadFavoriteItems() {
+    setState(() {
+      favoriteItems = FavoriteNotices.favorites;
+    });
+  }
+
+  Future<void> _removeFromFavorites(Notice notice) async {
+    await FavoriteNotices.toggle(notice);
+    _loadFavoriteItems();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('관심 공지에서 제거되었습니다.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Notice> favoriteItems = FavoriteNotices.favorites;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('관심 공지 편집'),
+        title: const Text('관심 공지'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -41,12 +61,8 @@ class _FavoriteNoticesPageState extends State<FavoriteNoticesPage> {
                     children: [
                       Expanded(child: Text(notice.title)),
                       IconButton(
-                        icon: const Icon(Icons.remove_circle, color: Colors.red),
-                        onPressed: () {
-                          setState(() {
-                            FavoriteNotices.remove(notice);
-                          });
-                        },
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () => _removeFromFavorites(notice),
                       ),
                     ],
                   ),

@@ -7,10 +7,11 @@ class Notice {
   final DateTime endDate;
   final Color color;
   final String? url;
+  final String? writer; // 여기 추가
 
   bool isFavorite; // 관심 공지 여부
-  bool isHidden;   // 숨김 여부
-  String? memo;    // 메모 내용
+  bool isHidden; // 숨김 여부
+  String? memo; // 메모 내용
 
   Notice({
     required this.title,
@@ -18,6 +19,7 @@ class Notice {
     required this.endDate,
     required this.color,
     this.url,
+    this.writer, // 생성자에도 추가
     this.isFavorite = false,
     this.isHidden = false,
     this.memo,
@@ -31,13 +33,40 @@ class Notice {
     return !date.isBefore(startDate) && !date.isAfter(endDate);
   }
 
+  // JSON → Notice
+  factory Notice.fromJson(Map<String, dynamic> json) {
+    return Notice(
+      title: json['title'],
+      startDate: DateTime.parse(json['startDate']),
+      endDate: DateTime.parse(json['endDate']),
+      color: Color(json['color']), // int로 저장된 color를 복원
+      url: json['url'],
+      writer: json['writer'],
+      isFavorite: json['isFavorite'] ?? false,
+      isHidden: json['isHidden'] ?? false,
+      memo: json['memo'],
+    );
+  }
+
+  // Notice → JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+      'color': color.value, // int로 변환
+      'url': url,
+      'writer': writer,
+      'isFavorite': isFavorite,
+      'isHidden': isHidden,
+      'memo': memo,
+    };
+  }
+
   @override
   bool operator ==(Object other) =>
-      other is Notice &&
-      title == other.title &&
-      startDate == other.startDate;
+      other is Notice && title == other.title && startDate == other.startDate;
 
   @override
   int get hashCode => Object.hash(title, startDate);
 }
-
