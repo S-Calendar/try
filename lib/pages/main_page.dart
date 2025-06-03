@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_calendar.dart';
 import '../models/notice.dart';
 import '../services/notice_data.dart';
-import '../widgets/notice_modal.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -37,10 +36,48 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  // 관심 목록 페이지 등에서 돌아올 때 새로 고침 용
   Future<void> _navigateAndRefresh(String routeName) async {
     await Navigator.pushNamed(context, routeName);
     await _loadNotices();
+  }
+
+  void _showCategoryFilterPopup() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("공지 카테고리 필터"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CheckboxListTile(
+                title: const Text('학사공지'),
+                value: false,
+                onChanged: (_) {},
+              ),
+              CheckboxListTile(
+                title: const Text('ai학과공지'),
+                value: false,
+                onChanged: (_) {},
+              ),
+              CheckboxListTile(
+                title: const Text('취업공지'),
+                value: false,
+                onChanged: (_) {},
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // 닫기
+              },
+              child: const Text('닫기'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -86,7 +123,7 @@ class _MainPageState extends State<MainPage> {
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
-                    onTap: () => _navigateAndRefresh('/filter'),
+                    onTap: _showCategoryFilterPopup, // 팝업 UI만 표시
                     child: Image.asset(
                       'assets/colorfilter_icon.png',
                       width: 44,
@@ -121,3 +158,4 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
+
