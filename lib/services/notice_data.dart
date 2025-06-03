@@ -7,7 +7,7 @@ import '../models/notice.dart';
 class NoticeData {
   static Future<List<Notice>> loadNoticesFromFirestore() async {
     final snapshot =
-        await FirebaseFirestore.instance.collection('notices').get();
+        await FirebaseFirestore.instance.collection('calendarEvents').get();
     List<Notice> all = [];
 
     for (var doc in snapshot.docs) {

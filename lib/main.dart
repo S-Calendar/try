@@ -4,8 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 // Firebase import 추가
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
-import 'pages/splash_page.dart';
 import 'pages/start_page.dart';
 import 'pages/main_page.dart';
 import 'pages/search_page.dart'; // 올바른 경로와 이름으로 수정
