@@ -18,7 +18,7 @@ class _MainPageState extends State<MainPage> {
   late int _selectedIndex;
   late int _todayIndex;
   late List<Notice> allNotices = [];
-  List<String> selectedCategories = ['학사공지', 'ai학과공지', '취업공지'];
+  List<String> selectedCategories = ['ai학과공지', '학사공지', '취업공지'];
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _MainPageState extends State<MainPage> {
   Future<void> _loadNotices() async {
     final notices = await NoticeData.loadNoticesFromFirestore();
     setState(() {
-      allNotices = notices.where((n) => !n.isHidden).toList(); // 숨김 공지 제외
+      allNotices = notices.where((n) => !n.isHidden).toList();
     });
   }
 
@@ -43,35 +43,25 @@ class _MainPageState extends State<MainPage> {
     await _loadNotices();
   }
 
-  void _showCategoryFilterPopup() async {
-    final result = await showDialog<List<String>>(
+  void _showCategoryDialog() {
+    showDialog(
       context: context,
-      builder: (context) {
-        return CategoryFilterDialog(
-          selectedCategories: selectedCategories,
-          onApply: (selected) {
-            Navigator.of(context).pop(selected); // 선택된 카테고리를 반환
-          },
-        );
-      },
+      builder:
+          (context) => CategoryFilterDialog(
+            selectedCategories: selectedCategories,
+            onApply: (newCategories) {
+              setState(() {
+                selectedCategories = newCategories;
+              });
+            },
+          ),
     );
-
-    if (result != null) {
-      setState(() {
-        selectedCategories = result;
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final int year = baseYear + (_selectedIndex ~/ 12);
     final int month = (_selectedIndex % 12) + 1;
-
-    // 선택된 카테고리 공지만 표시
-    final filteredNotices = allNotices
-        .where((notice) => selectedCategories.contains(notice.category))
-        .toList();
 
     return Scaffold(
       body: SafeArea(
@@ -111,7 +101,7 @@ class _MainPageState extends State<MainPage> {
                   ),
                   const SizedBox(width: 4),
                   GestureDetector(
-                    onTap: _showCategoryFilterPopup,
+                    onTap: _showCategoryDialog,
                     child: Image.asset(
                       'assets/colorfilter_icon.png',
                       width: 44,
@@ -133,10 +123,12 @@ class _MainPageState extends State<MainPage> {
                   final month = (index % 12) + 1;
                   final currentMonth = DateTime(year, month);
 
-                  return CustomCalendar(
-                    month: currentMonth,
-                    notices: filteredNotices,
-                  );
+                  final filtered =
+                      allNotices
+                          .where((n) => selectedCategories.contains(n.category))
+                          .toList();
+
+                  return CustomCalendar(month: currentMonth, notices: filtered);
                 },
               ),
             ),
