@@ -47,87 +47,98 @@ class _CategoryFilterDialogState extends State<CategoryFilterDialog> {
     return AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text(
-        '카테고리 별로 확인하기',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: const Text('카테고리 별로 확인하기', style: TextStyle(fontSize: 20)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: allCategories.map((category) {
-          final isSelected = tempSelected.contains(category['value']);
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F1F1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                // 색 띠
-                Container(
-                  width: 8,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: category['color'],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
+        children:
+            allCategories.map((category) {
+              final isSelected = tempSelected.contains(category['value']);
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
                 ),
-                const SizedBox(width: 12),
-                // 체크박스 (동그라미)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        tempSelected.remove(category['value']);
-                      } else {
-                        tempSelected.add(category['value']);
-                      }
-                    });
-                  },
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black54, width: 2),
-                      color: isSelected ? category['color'] : Colors.transparent,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F1F1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    // 색 띠
+                    Container(
+                      width: 8,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: category['color'],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
-                    child: isSelected
-                        ? const Icon(Icons.check, size: 14, color: Colors.white)
-                        : null,
-                  ),
+                    const SizedBox(width: 12),
+                    // 체크박스 (동그라미)
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            tempSelected.remove(category['value']);
+                          } else {
+                            tempSelected.add(category['value']);
+                          }
+                        });
+                      },
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black54, width: 2),
+                          color:
+                              isSelected
+                                  ? category['color']
+                                  : Colors.transparent,
+                        ),
+                        child:
+                            isSelected
+                                ? const Icon(
+                                  Icons.check,
+                                  size: 14,
+                                  color: Colors.white,
+                                )
+                                : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 텍스트
+                    Expanded(
+                      child: Text(
+                        category['label'],
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                // 텍스트
-                Expanded(
-                  child: Text(
-                    category['label'],
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
       ),
-      actionsPadding: const EdgeInsets.only(bottom: 12, right: 16),
+
       actions: [
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+        Center(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 14),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          ),
-          onPressed: () {
-            widget.onApply(tempSelected);
-            Navigator.of(context).pop();
-          },
-          child: const Text(
-            '해당 공지만 확인하기',
-            style: TextStyle(color: Colors.white),
+            onPressed: () {
+              widget.onApply(tempSelected);
+              Navigator.of(context).pop();
+            },
+            child: const Text(
+              '해당 공지만 확인하기',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ),
       ],
