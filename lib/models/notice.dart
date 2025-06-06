@@ -8,6 +8,7 @@ class Notice {
   final Color color;
   final String? url;
   final String? writer; // 여기 추가
+  final String category; // 카테고리 필드 추가
 
   bool isFavorite; // 관심 공지 여부
   bool isHidden; // 숨김 여부
@@ -18,6 +19,7 @@ class Notice {
     required this.startDate,
     required this.endDate,
     required this.color,
+    required this.category, // 추가
     this.url,
     this.writer, // 생성자에도 추가
     this.isFavorite = false,
@@ -40,6 +42,7 @@ class Notice {
       startDate: DateTime.parse(json['startDate']),
       endDate: DateTime.parse(json['endDate']),
       color: Color(json['color']), // int로 저장된 color를 복원
+      category: json['category'], // 추가
       url: json['url'],
       writer: json['writer'],
       isFavorite: json['isFavorite'] ?? false,
@@ -55,6 +58,7 @@ class Notice {
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
       'color': color.value, // int로 변환
+      'category': category,  // 추가
       'url': url,
       'writer': writer,
       'isFavorite': isFavorite,
