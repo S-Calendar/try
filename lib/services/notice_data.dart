@@ -42,6 +42,7 @@ class NoticeData {
             isFavorite: data['isFavorite'] ?? false,
             isHidden: data['isHidden'] ?? false,
             memo: data['memo'],
+            category: data['category'] ?? '',
           ),
         );
       } catch (e) {
