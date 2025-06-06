@@ -67,6 +67,7 @@ class HiddenNotices {
     color: Color(m['color']),
     url: m['url'],
     memo: m['memo'],
+    category: m['category'],
     isHidden: true,
   );
 
